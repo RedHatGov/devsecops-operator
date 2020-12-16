@@ -1,205 +1,27 @@
-= TSSC Overview
-
-The Trusted Software Supply Chain(TSSC) has 2 high level pieces: the Platform and the Pipeline. More information on the pipeline can be found here: https://rhtconsulting.github.io/tsc-docs/. Please note that at this time (Oct 2020) the documentation at that link is still using old nomenclature: a simplistic translation would be TSSC == TSSC Pipeline and TISC == TSSC Platform.
-
-https://github.com/rhtconsulting/tssc-python-package[The TSSC Pipeline is implemented as a Python command line tool] that can run in any CI service; Jenkins, Tekton, GitLab, etc... It ships with a set of step implementations and can be extended with other step implementations. The Pipeline depends on a variety of services and tools to operate; source control repository, dependency repository, image repository, security scanner, etc... One could set these up and maintain them by hand...or you could just use the TSSC Platform.
-
-The TSSC Platform is a set of services and tools deployed on K8s/OCP using operators wherever possible. We aim to keep it compliant with the https://dodcio.defense.gov/Portals/0/Documents/DoD%20Enterprise%20DevSecOps%20Reference%20Design%20v1.0_Public%20Release.pdf?ver=2019-09-26-115824-583[DoD Enterprise DevSecOps Reference Design(DEDSORD)] in both connected and disconnected clusters. A quick look at the roles folder in this repo will show you what services and tools are available in the TSSC Platform.
-
-
-= Tssc Operator
+= DevSecOps Operator
 
 == Overview
 
-This repository contains the code to build a Tssc Operator for Kubernetes, including Red Hat OpenShift Container Platform.
-
-It is implemented on top of the Red Hat https://sdk.operatorframework.io/[Operator SDK] - in particular the https://sdk.operatorframework.io/docs/building-operators/ansible/[Ansible Operator].
-
-This operator services the following https://docs.openshift.com/container-platform/4.5/operators/understanding/crds/crd-managing-resources-from-crds.html[CRDs]:
-
-* <<TsscPlatform CRD>>
-* <<TsscWorkshop CRD>>
-* <<TsscPipeline CRD>>
+This repository contains the code to build a DevSecOps Operator for Kubernetes, including Red Hat OpenShift Container Platform.
 
 The above https://docs.openshift.com/container-platform/4.5/operators/understanding/crds/crd-managing-resources-from-crds.html[CRDs] enable the following use cases:
 
 * <<DevSecOps Workshop>>
-* <<TSSC Workshop to Onboard an App>>
-* <<TSSC Demo with a Reference App>>
-* <<Production Deployment of TSSC Platform>>
-* <<Production Deployment of TSSC Pipeline>>
 
 == Use Cases
 === DevSecOps Workshop
 
 Deploy and configure the resources required by the https://github.com/RedHatGov/devsecops-workshop-dashboard/blob/develop/tekton/workshop/content/index.md[DevSecOps workshop]. The workshop should be ready for an SA to conduct after this operator has completed execution.
 
-=== TSSC Workshop to Onboard an App
-
-Deploy and configure the resources required by the ...doesn't exist yet:
-https://github.com/RedHatGov/tssc-operator/issues/57
-
-
-=== TSSC Demo with a Reference App
-
-Deploy and configure a TSSC Platform and Pipeline for the http://gitea.apps.tssc.rht-set.com/tssc-references/reference-quarkus-mvn-jenkins[TSSC Quarkus reference app]; this includes importing and updating the config of the git repos. You can deploy this using the steps below:
-
-1. Login to an OpenShift cluster (tested on 4.4 or above) as a `cluster-admin`
-2. Create a `CatalogSource` to import the RedHatGov operator catalog.
-
-  oc apply -f - << EOF
-  apiVersion: operators.coreos.com/v1alpha1
-  kind: CatalogSource
-  metadata:
-    name: redhatgov-operators
-    namespace: openshift-marketplace
-  spec:
-    sourceType: grpc
-    image: quay.io/redhatgov/operator-catalog:latest
-    displayName: Red Hat NAPS Community Operators
-    publisher: RedHatGov
-  EOF
-
-3. Create a project named **devsecops** for your pipeline tooling to live.
-
-  oc new-project devsecops
-
-4. *If you are using an RHPDS-provisioned cluster:*  delete the limit range for the new project. RHPDS sometimes sets default CPU / memory limits that are too restrictive for certain Pods that the operator will create.
-
-  oc delete limitrange --all -n devsecops
-
-5. In the OpenShift Web Console, navigate to **Operators -> OperatorHub** and search for "TSSC Operator". Select it and click **Install**
-6. Set **Installation Mode** to *A specific namespace on the cluster* and set **Installed Namespace** to *devsecops*.
-7. Leave other options as default and click **Install** once more.
-8. *If you're using an RHPDS-provisioned cluster, you can skip this step, since this secret is created as part of the default provisioning template.* Create a `.dockerconfigjson` secret containing a pull token for registry.redhat.io.
-It is recommended to generate a new service account before a workshop and delete it after, as this token is available in each of the users' projects (and can be used in the future if the service account isn't deleted). To get a service account:
-  * Go to https://access.redhat.com/terms-based-registry/
-  * Login with your Red Hat credentials, then go to Service Accounts (upper right corner) and create a new service account. 
-  * Click on the name of the service account, go to the 'Docker Configuration' tab, click 'view its contents' 
-  * Copy the contents and save it `~/.docker/config.json`
-  * Create the config.json file if not already existed `vi ~/.docker/config.json` and paste the contents there.
-  * Run the below command to create the pull-secret secret in the openshift-config namespace
-  
-  
-  oc create secret generic pull-secret --from-file=.dockerconfigjson=</path/to/.docker/config.json> --type=kubernetes.io/dockerconfigjson -n openshift-config
-  
- 
-  * Remember to replace `</path/to/.docker/config.json>` with the location where the `config.json` file is saved.
-
-9. On the TSSC Operator page, create a new `TsscPlatform` CustomResource.
-10. If you modified the name of your pull secret in Step 7, provide the corresponding values for **Tsscplatform -> Pull Secret** as needed. Otherwise, you can leave this blank.
-11. Watch the logs of the `tssc-operator-controller-manager` pod, and wait for:
-
-  PLAY RECAP *********************************************************************
-  [0;33mlocalhost[0m                  : [0;32mok=32  [0m [0;33mchanged=10  [0m unreachable=0    failed=0    [0;36mskipped=17  [0m rescued=0    ignored=0
-
-- This message indicates that the Reconciliation is complete. It should appear within 8-10 minutes.
-
-12. Then create a `TsscPipeline` instance, which should create and start your pipeline job in Jenkins:
-
-----
-oc apply -n devsecops -f - << EOF
-apiVersion: redhatgov.io/v1alpha1
-kind: TsscPipeline
-metadata:
-  name: tsscpipeline
-spec: {}
-EOF
-----
-
-==== Note
-
-This use case supports RHSSO with or without a backing Identity Provider. Without a backing IP KeyCloak users can be created.
-
-=== Production Deployment of TSSC Platform
-
-This use case is simply deploying and integrating the services/tooling that is required by the TSSC Pipeline. This platform could be used by a TSSC Pipeline, a workshop, a custom pipeline, or anything the user desires.
-
-=== Production Deployment of TSSC Pipeline
-
-This use case does not included the steps required to alter a target git repository(s) to integrate it with TSSC. This use case includes configuration of a TSSC Platform to support a correctly configured pair of git repositories: source code and deploy config.
-
-==== Note
-
-This use case supports RHSSO with or without a backing Identity Provider. Without a backing IP KeyCloak users can be created.
-
-== CRDs
-=== TsscPlatform CRD
-
-This CRD is responsible for the service tooling, or platform, required to support a TSSC Pipeline: a TSSC Platform. Each service/tool the CDR supports exposes options at a minimum a boolean to install or not to install it. 
-
-Wherever possible we delegate to another operator to create/manage the platform services. For example the https://github.com/RedHatGov/gitea-operator[gitea-operator] happens to also be part of this GitHub org. That allows us to make changes to that operator to fulfill the needs of TSSC. Another example is the rhsso-operator; which is not an operator the TSSC group controls. If you compare the gitea and rhsso roles in this repo you will notice that the gitea role simply subscribes to the operator and applies one or more CRs. The rhsso role includes more tasks as there are gaps between what TSSC needs and what the rhsso-operator fulfills with it's CRs.
-
-==== Note
-
-This CRD is used to support all the use cases including: <<DevSecOps Workshop>>.
-
-=== TsscWorkshop CRD
-
-This CRD is responsible for deploying everything needed to run a workshop on top of a TsscPlatform. If the name of a TsscPlatform is not supplied in this CR a TsscPlatform CR will be created with the same name as this CR.
-
-After this operator has completed execution in response to this CR an SA should be able to conduct the workshop without additional deployments or configurations.
-
-==== Note
-
-This CRD's responsibilities may include deploy or configuring addition services/tools beyond what the TsscPlatform CRD does(eg. username-distribution).
-
-This CRD supports both use cases: <<TSSC Workshop to Onboard an App>> and <<DevSecOps Workshop>>.
-
-=== TsscPipeline CRD
-
-This CRD is responsible for configuring the service/tooling deployed by a TsscPlatform CR. If the name of a TsscPlatform is not supplied in this CR a TsscPlatform CR will be created with the same name as this CR.
-
-This operator will not attempt to alter a target git repository(s) to integrate it with TSSC. After this operator has completed execution in response to this CR the only actions that should remain would be to edit contents of the target git repositories.
-
-==== Note
-
-This CRD supports both use cases: <<TSSC Demo with a Reference App>> and <<Production Deployment of TSSC Pipeline>>.
-
-== Intended Design vs Current Layout
-
-Please keep in mind that at the moment we are merging what was the devsecops workshop with the TSSC platform and the intended design is not yet obvious from the current layout. 
-
-Each CRD maps to a playbook named the same. Each playbook will call specific task lists from each role as opposed to calling the default task list main. For example the tssc-platform.yml playbook would call the task list tssc-platform from each role:
-
-----
-  tasks:
-    - import_role:
-        name: gitea
-        tasks_from: tssc-platform
-    
-    - import_role:
-        name: fuzzy-bunny
-        tasks_from: tssc-platform
-----
-
-Both the TsscPipeline and TsscWorkshop CRDs allow you to specify an existing TsscPlatform and if not specified a TsscPlatform CR will be created accordingly.
-
-=== Design Quirks
-
-Please note how defaults behave for a CRD and how you must code to create behaviors that don't surprise the user:
-
-The CRD, if it has defaults set, will cause validation of vars to have their spec fleshed out to include those defaults if they were left out. When the playbook is called, those defaults from the CRD are passed as vars because they now exist in the CR. If you have an optional section in the CRD with no defaults, but the spec is validated, the variables will be passed to the playbook as a literal null value (None in Python).
-
-None provided to a role will not inherit defaults.
-None filtered with Ansible's default filter will be override with the default.
-
-This set of conditions means you should apply defaults in the CRD and the playbook; or, rather, maybe an or would be appropriate.
-
-* a validated but undefaulted CRD variable should have a default in the playbook
-* a defaulted CRD variable should be expected to be passed into the playbook
-
-This is not well documented, and James discovered this "feature" while working on things.
-
 == Building the Operator
 
-There is a script `hack/operate.sh` which will download the prerequisites (operator-sdk etc.), build the operator artifacts from operator-sdk defaults, package and push the operator container image, deploy the artifacts to a Kubernetes cluster, and create a `kind: TsscPlatform` CR to deploy an instance. You should use the help page to look at what the various options do, but for the most part if you want to deploy a Tssc Platform to a cluster directly from this repo you could run `hack/operate.sh -d`.
+There is a script `hack/operate.sh` which will download the prerequisites (operator-sdk etc.), build the operator artifacts from operator-sdk defaults, package and push the operator container image, deploy the artifacts to a Kubernetes cluster, and create a `kind: DevSecOpsWorkshop` CR to deploy an instance. You should use the help page to look at what the various options do, but for the most part if you want to deploy a Tssc Platform to a cluster directly from this repo you could run `hack/operate.sh -d`.
 
 Before running the script make sure to update the location of the container image to a repository you have access to. If you decide to build your own container image for the operator, make sure to update `hack/operate.conf` with an updated container image location and add the `-p` flag to `operate.sh`.
 
 == Developer Installation Steps
 
-The installation of the Custom Resource Definition and Cluster Role requires *cluster-admin* privileges. After that regular users with `admin` privileges on their projects (which is automatically granted to the user who creates a project) can provision the Tssc Operator in their projects and deploy TsscPlatforms using the tsscplatform.redhatgov.io Custom Resource. If you've installed the operator from the https://github.com/RedHatGov/operator-catalog[RedHatGov Operator Catalog Index] on an OLM-enabled cluster, the Tssc operator can be installed from the OperatorHub interface of the console.
+The installation of the Custom Resource Definition and Cluster Role requires *cluster-admin* privileges. After that regular users with `admin` privileges on their projects (which is automatically granted to the user who creates a project) can provision the Tssc Operator in their projects and deploy DevSecOpsWorkshops using the devsecopsworkshop.redhatgov.io Custom Resource. If you've installed the operator from the https://github.com/RedHatGov/operator-catalog[RedHatGov Operator Catalog Index] on an OLM-enabled cluster, the Tssc operator can be installed from the OperatorHub interface of the console.
 
 Perform the following tasks as *cluster-admin*:
 
@@ -211,7 +33,7 @@ hack/operate.sh
 ----
 
 . Once the Operator pod is running the Operator is ready to start creating Tssc Platforms.
-. To deploy the above, and also one of the `config/samples/redhatgov_v1alpha1_tsscplatform*.yaml` example CustomResources:
+. To deploy the above, and also one of the `config/samples/redhatgov_v1alpha1_devsecopsworkshop*.yaml` example CustomResources:
 +
 [source,sh]
 ----
@@ -227,35 +49,34 @@ hack/operate.sh --overlay=namespaced --namespace=mynamespace
 
 == Custom Resources
 
-* `TsscPlatform` - deploys platform components which support the Trusted Software Supply Chain. For a list of these components, see the link:roles/tssc-platform/[tssc-platform roles directory].
 * `DevSecOpsWorkshop` - deploys tooling, pipelines, and user resources to support the OpenShift DevSecOps workshop. For a list of related roles, see the link:roles/devsecops-workshop/[devsecops-workshop roles directory].
 
-== Deploying a custom TsscPlatform instance using the Operator
+== Deploying a custom DevSecOpsWorkshop instance using the Operator
 
-A TsscPlatform instance is deployed by creating a `kind: TsscPlatform` Custom Resource based on the TsscPlatform Custom Resource Definition. You can see some samples in the link:config/samples/[samples directory]. If you've installed the operator from the https://github.com/RedHatGov/operator-catalog[RedHatGov Operator Catalog Index] on an OLM-enabled cluster, Custom Resource creation can be done through the console UI with embedded documentation or a form view.
+A DevSecOpsWorkshop instance is deployed by creating a `kind: DevSecOpsWorkshop` Custom Resource based on the DevSecOpsWorkshop Custom Resource Definition. You can see some samples in the link:config/samples/[samples directory]. If you've installed the operator from the https://github.com/RedHatGov/operator-catalog[RedHatGov Operator Catalog Index] on an OLM-enabled cluster, Custom Resource creation can be done through the console UI with embedded documentation or a form view.
 
-. Write the definition to a file (e.g. tsscplatform.yaml) and then create the TsscPlatform instance:
+. Write the definition to a file (e.g. devsecopsworkshop.yaml) and then create the DevSecOpsWorkshop instance:
 +
 [source,sh]
 ----
-oc create -f ./tsscplatform.yaml
+oc create -f ./devsecopsworkshop.yaml
 ----
 
-. The operator will deplot a Tssc Platform.
-. You can validate the existence of your Tssc Platform instance by querying for tsscplatform objects:
+. The operator will deploy a DevSecOpsWorkshop.
+. You can validate the existence of your DevSecOpsWorkshop instance by querying for devsecopsworkshop objects:
 +
 [source,sh]
 ----
-oc get tsscplatforms
+oc get devsecopsworkshops
 ----
 
-== Deleting a TsscPlatform instance
+== Deleting a DevSecOpsWorkshop instance
 
-Deleting a `TsscPlatform` object will not undeploy dependent objects. This functionality is still under construction.
+Deleting a `DevSecOpsWorkshop` object will not undeploy dependent objects. This functionality is still under construction.
 
-== Developer Uninstalling the Tssc Operator
+== Developer Uninstalling the DevSecOps Operator
 
-In case you wish to uninstall the Tssc Operator, simply delete the operator and its resources with:
+In case you wish to uninstall the DevSecOps Operator, simply delete the operator and its resources with:
 
 [source,sh]
 ----
@@ -263,18 +84,3 @@ hack/operate.sh -r
 ----
 
 OLM uninstallation for OLM-based operators can be handled through the UI, or by deleting the `Subscription`.
-
-== Notes on disconnected installations
-
-The Operator SDK makes heavy use of Kustomize for development and installation, but intends bundles to be generated for use in an operator catalog. This enables the Operator Lifecycle Manager, deployed onto your cluster, to install and configure operators with a simple `kind: Subscription` object, instead of a large collection of manifests.
-
-If you are using a `registries.conf` change and/or ImageContentSourcePolicy mirror that covers quay.io/redhatgov images, you should not have to change anything.
-
-To change the image sources for all necessary images to deploy the operator without such a policy, you need to have the following images hosted in a container repository on your disconnected network:
-
-* quay.io/redhatgov/tssc-operator:latest
-
-If you intend on using `hack/operate.sh` it expects you to be in a development environment. Operator installation from this script therefore expects access to the internet. This comes with one extra concern: If `kustomize` isn't in your path, it tries to download it from the internet and save it locally into a `.gitignore`d folder. If you intend on using `hack/operate.sh` to install the operator, you should also bring `kustomize` and place it in the `$PATH` of the user who will be running the script. Additionally, in order to install the operator with `hack/operate.sh` you'll need to make the following change:
-
-* `hack/operate.conf`: IMG should point to the tssc-operator image in your environment
-
