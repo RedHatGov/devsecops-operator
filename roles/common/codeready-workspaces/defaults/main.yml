@@ -9,11 +9,6 @@ crw_deployment_type: devsecops
 hotload_crw_users: yes
 keycloak_url: "https://keycloak-{{ crw_project_name }}.{{ cluster_router }}"
 
-# TSSC Properties
-rhsso_project_name: rhsso
-rhsso_realm_name: openshift
-rhsso_app_name: rhsso
-
 crw_admin_user:
   username: codeready-admin
   password: demo123
