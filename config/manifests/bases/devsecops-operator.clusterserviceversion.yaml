@@ -6,13 +6,13 @@ metadata:
     capabilities: Basic Install
     operators.operatorframework.io/builder: operator-sdk-v1.0.0
     operators.operatorframework.io/project_layout: ansible.sdk.operatorframework.io/v1
-  name: tssc-operator.vX.Y.Z
+  name: devsecops-operator.vX.Y.Z
   namespace: placeholder
 spec:
   apiservicedefinitions: {}
   customresourcedefinitions: {}
-  description: Deploys and manages TSSC and dependent database.
-  displayName: TSSC Operator
+  description: Deploys the NAPS DevSecOpsWorkshop
+  displayName: DevSecOps Operator
   icon:
   - base64data: |
       iVBORw0KGgoAAAANSUhEUgAAAWgAAAFpCAYAAACxubJwAAAACXBIWX
@@ -134,17 +134,16 @@ spec:
     type: AllNamespaces
   keywords:
   - redhatgov
-  - tssc
   - devsecops
   - workshop
   links:
-  - name: TSSC Operator
-    url: https://github.com/redhatgov/tssc-operator
+  - name: DevSecOps Operator
+    url: https://github.com/redhatgov/devsecops-operator
   maintainers:
-  - email: aromerot@redhat.com
-    name: Andres Romero
   - email: akrohg@redhat.com
     name: Andy Krohg
+  - email: aromerot@redhat.com
+    name: Andres Romero
   maturity: alpha
   provider:
     name: RedHatGov

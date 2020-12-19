@@ -15,13 +15,13 @@ Deploy and configure the resources required by the https://github.com/RedHatGov/
 
 == Building the Operator
 
-There is a script `hack/operate.sh` which will download the prerequisites (operator-sdk etc.), build the operator artifacts from operator-sdk defaults, package and push the operator container image, deploy the artifacts to a Kubernetes cluster, and create a `kind: DevSecOpsWorkshop` CR to deploy an instance. You should use the help page to look at what the various options do, but for the most part if you want to deploy a Tssc Platform to a cluster directly from this repo you could run `hack/operate.sh -d`.
+There is a script `hack/operate.sh` which will download the prerequisites (operator-sdk etc.), build the operator artifacts from operator-sdk defaults, package and push the operator container image, deploy the artifacts to a Kubernetes cluster, and create a `kind: DevSecOpsWorkshop` CR to deploy an instance. You should use the help page to look at what the various options do, but for the most part if you want to deploy a DevSecOpsWorkshop to a cluster directly from this repo you could run `hack/operate.sh -d`.
 
 Before running the script make sure to update the location of the container image to a repository you have access to. If you decide to build your own container image for the operator, make sure to update `hack/operate.conf` with an updated container image location and add the `-p` flag to `operate.sh`.
 
 == Developer Installation Steps
 
-The installation of the Custom Resource Definition and Cluster Role requires *cluster-admin* privileges. After that regular users with `admin` privileges on their projects (which is automatically granted to the user who creates a project) can provision the Tssc Operator in their projects and deploy DevSecOpsWorkshops using the devsecopsworkshop.redhatgov.io Custom Resource. If you've installed the operator from the https://github.com/RedHatGov/operator-catalog[RedHatGov Operator Catalog Index] on an OLM-enabled cluster, the Tssc operator can be installed from the OperatorHub interface of the console.
+The installation of the Custom Resource Definition and Cluster Role requires *cluster-admin* privileges. After that regular users with `admin` privileges on their projects (which is automatically granted to the user who creates a project) can provision the Devsecops Operator in their projects and deploy DevSecOpsWorkshops using the devsecopsworkshop.redhatgov.io Custom Resource. If you've installed the operator from the https://github.com/RedHatGov/operator-catalog[RedHatGov Operator Catalog Index] on an OLM-enabled cluster, the DevSecOps operator can be installed from the OperatorHub interface of the console.
 
 Perform the following tasks as *cluster-admin*:
 
@@ -32,7 +32,7 @@ Perform the following tasks as *cluster-admin*:
 hack/operate.sh
 ----
 
-. Once the Operator pod is running the Operator is ready to start creating Tssc Platforms.
+. Once the Operator pod is running the Operator is ready to start creating DevSecOpsWorkshops
 . To deploy the above, and also one of the `config/samples/redhatgov_v1alpha1_devsecopsworkshop*.yaml` example CustomResources:
 +
 [source,sh]
