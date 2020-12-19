@@ -19,7 +19,7 @@ before_script:
 script:
 - make kustomize
 - '[ -f ./bin/kustomize ] && export KUSTOMIZE="$(realpath ./bin/kustomize)" || export KUSTOMIZE="$(which kustomize)"'
-- molecule test -s ocp-cluster
+- molecule test -s ocp-cluster --debug
 deploy:
 - provider: script
   script: hack/operate.sh --push-images --bundle --develop --verbose --formatter
