@@ -11,7 +11,7 @@
   k8s_info:
     api_version: operators.coreos.com/v1
     kind: OperatorGroup
-    namespace: '{{ tssc_namespace }}'
+    namespace: '{{ devsecops_namespace }}'
   register: operator_groups
 
 - set_fact:

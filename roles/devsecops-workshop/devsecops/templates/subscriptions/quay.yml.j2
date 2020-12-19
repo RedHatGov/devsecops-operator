@@ -6,7 +6,7 @@ items:
   kind: Subscription
   metadata:
     name: quay-operator
-    namespace: {{ tssc_namespace }}
+    namespace: {{ devsecops_namespace }}
   spec:
     channel: quay-v3.3
     installPlanApproval: Automatic
@@ -19,7 +19,7 @@ items:
   kind: Secret
   metadata:
     name: dummy-pull-secret
-    namespace: {{ tssc_namespace }}
+    namespace: {{ devsecops_namespace }}
   type: kubernetes.io/dockerconfigjson
   data:
     .dockerconfigjson: ewogICJhdXRocyI6IHsKICAgICJxdWF5LmlvIjogewogICAgICAiYXV0aCI6ICJjbVZrYUdGMEszRjFZWGs2VHpneFYxTklVbE5LVWpFMFZVRmFRa3MxTkVkUlNFcFRNRkF4VmpSRFRGZEJTbFl4V0RKRE5GTkVOMHRQTlRsRFVUbE9NMUpGTVRJMk1USllWVEZJVWc9PSIsCiAgICAgICJlbWFpbCI6ICIiCiAgICB9CiAgfQp9

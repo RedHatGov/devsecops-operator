@@ -5,8 +5,8 @@ resources:
 - ../../rbac
 - ../../manager
 
-namespace: tssc-operator-system
-namePrefix: tssc-operator-
+namespace: devsecops-operator-system
+namePrefix: devsecops-operator-
 
 images:
 - name: testing

@@ -2,7 +2,7 @@ apiVersion: redhatgov.io/v1alpha1
 kind: Sonarqube
 metadata:
   name: sonarqube
-  namespace: {{ tssc_namespace }}
+  namespace: {{ devsecops_namespace }}
 spec:
   persistent: true
   postgresql:
@@ -11,5 +11,5 @@ spec:
     expose:
       kind: Route
       ssl: true
-      uri: sonarqube-{{ tssc_namespace }}.apps.{{ full_cluster_name }}
+      uri: sonarqube-{{ devsecops_namespace }}.apps.{{ full_cluster_name }}
     volumeSize: 4Gi
