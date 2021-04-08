@@ -306,11 +306,11 @@ function update_components() {
     # Ensure we have the things we need to work with the operator-sdk
     if [ -z "$components_updated" ]; then
         if [ "$VIRTUAL_ENV" ]; then
-            error_run "Updating the Operator SDK manager" pip install --upgrade operator-sdk-manager || return 1
+            error_run "Updating the Operator SDK manager" 'pip3 install --upgrade -r "$SCRIPT_ROOT/requirements.txt"' || return 1
         else
-            error_run "Updating the Operator SDK manager" pip install --user --upgrade operator-sdk-manager || return 1
+            error_run "Updating the Operator SDK manager" 'pip3 install --user --upgrade -r "$SCRIPT_ROOT/requirements.txt"' || return 1
         fi
-        error_run "Updating the Operator SDK" 'sdk_version=$(operator-sdk-manager update --version=1.1.0 -vvvv | cut -d" " -f 3)' || return 1
+        error_run "Updating the Operator SDK" 'sdk_version=$(osdk-manager osdk update --no-verify -vvvv | cut -d" " -f 3)' || return 1
     fi
     components_updated=true
 }
@@ -433,7 +433,7 @@ function publish_bundle() {
     error_run "Adding namespaced Role to kustomization" 'kustomize edit add resource namespaced/role.yaml' || return 1
     error_run "Adding namespaced RoleBinding to kustomization" 'kustomize edit add resource namespaced/role_binding.yaml' || return 1
     popd &>/dev/null
-    error_run "Building bundle manifests" 'kustomize build --load_restrictor none config/manifests | operator-sdk generate bundle --overwrite --version $VERSION --channels "$CHANNELS"' || return 1
+    error_run "Building bundle manifests" 'kustomize build --load-restrictor LoadRestrictionsNone config/manifests | operator-sdk generate bundle --overwrite --version $VERSION --channels "$CHANNELS"' || return 1
     error_run "Validating bundle" operator-sdk bundle validate ./bundle || return 1
     error_run "Building bundle image" docker build -f bundle.Dockerfile -t "$IMG-bundle:$VERSION" . || return 1
     if [ -z "$DEVELOP" ]; then
