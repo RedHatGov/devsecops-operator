@@ -98,3 +98,16 @@
   until: not sonarqube_users.failed
   retries: 3
   delay: 10
+
+- name: Update sonarqube settings to disable forced authentication
+  shell: >-
+    devsecops-api sonarqube update-setting
+    https://{{ sonarqube_route|json_query("resources[0].spec.host") }}
+    --login-username admin --login-password '{{ sonarqube_password }}'
+    --setting-name 'sonar.forceAuthentication'
+    --setting-value 'false'
+  register: sonarqube_settings
+  failed_when: sonarqube_settings.rc != 0
+  until: not sonarqube_settings.failed
+  retries: 3
+  delay: 10
